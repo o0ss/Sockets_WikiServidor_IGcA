@@ -46,7 +46,7 @@ namespace Servidor
                 Socket handler = listener.Accept();
 
                 string msg_recvd, wiki_out;
-                byte[] bytes_recvd = new byte[MAX_BYTES];
+                byte[] bytes_recvd = new byte[MAX_BYTES], response_bytes = new byte[MAX_BYTES];
                 int num_bytes_recvd;
 
                 while (true)
@@ -63,15 +63,25 @@ namespace Servidor
 
                     global::System.Console.WriteLine("Cliente: " + clean_query);
 
-                    Python_wiki_script(clean_query);
+                    if( clean_query != "exit")
+                    {
+                        Python_wiki_script(clean_query);
 
-                    // read wiki output from wiki_out.temp into string
-                    wiki_out = System.IO.File.ReadAllText("wiki_out.tmp");
-                    byte[] response_bytes = Encoding.UTF8.GetBytes(wiki_out);
+                        // read wiki output from wiki_out.temp into string
+                        wiki_out = System.IO.File.ReadAllText("wiki_out.tmp");
+                        response_bytes = Encoding.UTF8.GetBytes(wiki_out);
+                        handler.Send(response_bytes);
+                    }
+                    else
+                    {
+                        response_bytes = Encoding.UTF8.GetBytes("Bye!");
+                        handler.Send(response_bytes);
+                        break;
+                    }
                     
-                    // send string_out back to client
-                    handler.Send(response_bytes);
                 }
+                handler.Shutdown(SocketShutdown.Both);
+                handler.Close();
             }
             catch (Exception e)
             {
